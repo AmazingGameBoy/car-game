@@ -142,6 +142,7 @@
             car.y = canvas.height - 100;
         });
 
+        // Adjust button visibility and canvas size when entering or exiting fullscreen mode
         document.addEventListener('fullscreenchange', () => {
             const buttonContainer = document.querySelector('div');
             if (document.fullscreenElement) {
@@ -155,7 +156,7 @@
                 buttonContainer.style.top = '10px';
                 buttonContainer.style.left = '50%';
                 buttonContainer.style.transform = 'translateX(-50%)';
-                buttonContainer.style.zIndex = '1000';
+                buttonContainer.style.zIndex = '1000'; // Ensure buttons are above the canvas
             } else {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
@@ -167,7 +168,7 @@
                 buttonContainer.style.top = '10px';
                 buttonContainer.style.left = '50%';
                 buttonContainer.style.transform = 'translateX(-50%)';
-                buttonContainer.style.zIndex = '10';
+                buttonContainer.style.zIndex = '10'; // Reset z-index
             }
         });
 
@@ -368,7 +369,7 @@
             roadY = 0; // Reset road position
             isPaused = false; // Unpause the game
             gameRunning = true; // Ensure the game loop starts fresh
-            drawInitialScreen(); // Display the initial screen
+            toggleButtons('playing'); // Show Pause and Restart buttons
             updateGame(); // Restart the game loop
         }
 
@@ -411,12 +412,16 @@
                 restartButton.style.display = 'inline-block';
                 resumeButton.style.display = 'inline-block';
             } else if (state === 'gameover') {
-                startButton.style.display = 'none'; // Hide Start button
+                startButton.style.display = 'inline-block'; // Show Start button
                 pauseButton.style.display = 'none';
                 restartButton.style.display = 'inline-block';
                 resumeButton.style.display = 'none';
             }
         }
+
+        // Display the initial screen when the page loads
+        drawInitialScreen();
+        toggleButtons('start'); // Ensure only the Start button is visible initially
 
         // Start button logic
         document.getElementById('startButton').addEventListener('click', () => {
@@ -430,20 +435,20 @@
 
         // Pause button logic
         document.getElementById('pauseButton').addEventListener('click', () => {
-            isPaused = true;
+            isPaused = true; // Pause the game
             toggleButtons('paused'); // Show Resume and Restart buttons
         });
 
         // Resume button logic
         document.getElementById('resumeButton').addEventListener('click', () => {
-            isPaused = false;
+            isPaused = false; // Resume the game
             toggleButtons('playing'); // Show Pause and Restart buttons
             updateGame(); // Resume the game loop
         });
 
         // Restart button logic
         document.getElementById('restartButton').addEventListener('click', () => {
-            restartGame();
+            restartGame(); // Restart the game
             toggleButtons('playing'); // Show Pause and Restart buttons
         });
 
@@ -482,10 +487,10 @@
             });
 
             // Gradually increase difficulty
-            if (score >= lastMilestone + 10) {
-                obstacleSpeed += 0.5;
-                if (obstacleFrequency > 30) obstacleFrequency -= 5;
-                lastMilestone = score;
+            if (score >= lastMilestone + 10) { // Increase difficulty every 10 points
+                obstacleSpeed += 0.5; // Gradually increase speed
+                if (obstacleFrequency > 30) obstacleFrequency -= 5; // Gradually decrease frequency
+                lastMilestone = score; // Update the last milestone
             }
 
             // Check collision
@@ -525,23 +530,20 @@
             return false; // No collision
         }
 
-        // Handle controls
-        canvas.addEventListener('touchstart', (e) => {
+        canvas.addEventListener('touchmove', (e) => {
             const touchX = e.touches[0].clientX;
-
-            if (touchX < canvas.width / 2) {
+            if (touchX < canvas.width / 2 && car.x > 0) {
                 car.x -= car.speed;
-            } else {
+            } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
                 car.x += car.speed;
             }
         });
 
-        canvas.addEventListener('touchmove', (e) => {
+        canvas.addEventListener('touchstart', (e) => {
             const touchX = e.touches[0].clientX;
-
-            if (touchX < canvas.width / 2) {
+            if (touchX < canvas.width / 2 && car.x > 0) {
                 car.x -= car.speed;
-            } else {
+            } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
                 car.x += car.speed;
             }
         });
@@ -568,9 +570,7 @@
             }
         });
 
-        // Display the initial screen when the page loads
-        drawInitialScreen();
-        toggleButtons('start'); // Ensure only the Start button is visible initially
+        
     </script>
 </body>
 </html>
