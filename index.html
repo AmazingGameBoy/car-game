@@ -412,7 +412,7 @@
                 restartButton.style.display = 'inline-block';
                 resumeButton.style.display = 'inline-block';
             } else if (state === 'gameover') {
-                startButton.style.display = 'inline-block'; // Show Start button
+                startButton.style.display = 'none'; // Hide Start button
                 pauseButton.style.display = 'none';
                 restartButton.style.display = 'inline-block';
                 resumeButton.style.display = 'none';
@@ -530,21 +530,23 @@
             return false; // No collision
         }
 
-        canvas.addEventListener('touchmove', (e) => {
+        canvas.addEventListener('touchstart', (e) => {
             const touchX = e.touches[0].clientX;
+
             if (touchX < canvas.width / 2 && car.x > 0) {
-                car.x -= car.speed;
+                car.x -= car.speed; // Move left, but stop at the left boundary
             } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
-                car.x += car.speed;
+                car.x += car.speed; // Move right, but stop at the right boundary
             }
         });
 
-        canvas.addEventListener('touchstart', (e) => {
+        canvas.addEventListener('touchmove', (e) => {
             const touchX = e.touches[0].clientX;
+
             if (touchX < canvas.width / 2 && car.x > 0) {
-                car.x -= car.speed;
+                car.x -= car.speed; // Move left, but stop at the left boundary
             } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
-                car.x += car.speed;
+                car.x += car.speed; // Move right, but stop at the right boundary
             }
         });
 
