@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+    <title>Car Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #282c34; /* Dark background for better contrast */
+            color: white;
+        }
+
+        canvas {
+            display: block;
+            border: 2px solid white; /* Add a border around the canvas */
+        }
+
+        div {
+            position: absolute;
+            top: 10px; /* Move buttons to the top */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px; /* Slightly larger font size */
+            border: none;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            background: linear-gradient(135deg, #61dafb, #21a1f1); /* Gradient background */
+            color: white; /* White text for better contrast */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+            transition: all 0.3s ease; /* Smooth transition for hover effects */
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #21a1f1, #1b8cd8); /* Darker gradient on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3); /* Enhanced shadow on hover */
+        }
+
+        button:active {
+            transform: translateY(2px); /* Pressed effect */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Reduced shadow on click */
+        }
+
+        #landscapeMessage {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            text-align: center;
+            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        @media screen and (orientation: portrait) {
+            canvas {
+                display: none; /* Hide the game canvas in portrait mode */
+            }
+
+            #landscapeMessage {
+                display: block; /* Show the landscape message in portrait mode */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="landscapeMessage">
+        Please rotate your device to landscape mode to play the game.
+    </div>
+    <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-wrap: wrap; gap: 10px;">
+        <button id="startButton">Start</button>
+        <button id="pauseButton" style="display: none;">Pause</button>
+        <button id="resumeButton" style="display: none;">Resume</button>
+        <button id="restartButton" style="display: none;">Restart</button>
+        <button id="difficultyButton">Difficulty: Easy</button>
+        <button id="fullscreenButton">Fullscreen</button>
+        <button id="soundButton">Sound: On</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas dimensions to fit the screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Update canvas size on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            car.x = canvas.width / 2 - car.width / 2;
+            car.y = canvas.height - 100;
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            const buttonContainer = document.querySelector('div');
+            if (document.fullscreenElement) {
+                canvas.width = screen.width;
+                canvas.height = screen.height;
+                car.x = canvas.width / 2 - car.width / 2;
+                car.y = canvas.height - 100;
+
+                // Adjust button container for fullscreen
+                buttonContainer.style.position = 'fixed';
+                buttonContainer.style.top = '10px';
+                buttonContainer.style.left = '50%';
+                buttonContainer.style.transform = 'translateX(-50%)';
+                buttonContainer.style.zIndex = '1000';
+            } else {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                car.x = canvas.width / 2 - car.width / 2;
+                car.y = canvas.height - 100;
+
+                // Reset button container position
+                buttonContainer.style.position = 'absolute';
+                buttonContainer.style.top = '10px';
+                buttonContainer.style.left = '50%';
+                buttonContainer.style.transform = 'translateX(-50%)';
+                buttonContainer.style.zIndex = '10';
+            }
+        });
+
+        function checkOrientation() {
+            if (window.innerWidth > window.innerHeight) {
+                // Landscape mode
+                document.getElementById('landscapeMessage').style.display = 'none';
+                canvas.style.display = 'block';
+            } else {
+                // Portrait mode
+                document.getElementById('landscapeMessage').style.display = 'block';
+                canvas.style.display = 'none';
+            }
+        }
+
+        // Check orientation on page load
+        checkOrientation();
+
+        // Listen for orientation changes
+        window.addEventListener('resize', checkOrientation);
+
+        // Car properties
+        const car = {
+            x: canvas.width / 2 - 45, // Adjusted for new width (90 / 2)
+            y: canvas.height - 100,
+            width: 90, // Increased width
+            height: 100,
+            speed: 10,
+            color: 'red'
+        };
+
+        const carImage = new Image();
+        carImage.src = 'car.png';
+        carImage.onerror = () => console.error('Failed to load car.png');
+
+        const roadImage = new Image();
+        roadImage.src = 'road.png';
+        roadImage.onerror = () => console.error('Failed to load road.png');
+
+        const obstacleImage = new Image();
+        obstacleImage.src = 'obstacles.png'; // Correct file name
+        obstacleImage.onload = () => console.log('Obstacle image loaded successfully');
+        obstacleImage.onerror = () => console.error('Failed to load obstacles.png');
+
+        // Obstacle properties
+        const obstacles = [];
+        let obstacleFrequency = 100;
+        let frames = 0;
+
+        // Score
+        let score = 0;
+
+        // Sounds
+        const collisionSound = new Audio('collision.mp3');
+        const scoreSound = new Audio('score.mp3');
+
+        let soundEnabled = true;
+
+        document.getElementById('soundButton').addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundButton').innerText = soundEnabled ? 'Sound: On' : 'Sound: Off';
+        });
+
+        let isPaused = false;
+        let gameRunning = false; // Flag to track if the game is already running
+
+        let roadY = 0;
+
+        let difficulty = 'Easy'; // Default difficulty
+        let obstacleSpeed = 3; // Default obstacle speed
+
+        document.getElementById('difficultyButton').addEventListener('click', () => {
+            if (difficulty === 'Easy') {
+                difficulty = 'Medium';
+                obstacleFrequency = 80; // Increase obstacle frequency
+                obstacleSpeed = 5; // Increase obstacle speed
+            } else if (difficulty === 'Medium') {
+                difficulty = 'Hard';
+                obstacleFrequency = 60; // Further increase obstacle frequency
+                obstacleSpeed = 7; // Further increase obstacle speed
+            } else {
+                difficulty = 'Easy';
+                obstacleFrequency = 100; // Reset to default
+                obstacleSpeed = 3; // Reset to default
+            }
+            document.getElementById('difficultyButton').innerText = `Difficulty: ${difficulty}`;
+        });
+
+        // Track which keys are currently pressed
+        const keys = {};
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true; // Mark the key as pressed
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false; // Mark the key as released
+        });
+
+        // Update car position based on pressed keys
+        function handleCarMovement() {
+            if (keys['ArrowLeft'] && car.x > 0) {
+                car.x -= car.speed;
+            }
+            if (keys['ArrowRight'] && car.x + car.width < canvas.width) {
+                car.x += car.speed;
+            }
+            if (keys['ArrowUp'] && car.y > 0) {
+                car.y -= car.speed;
+            }
+            if (keys['ArrowDown'] && car.y + car.height < canvas.height) {
+                car.y += car.speed;
+            }
+        }
+
+        function drawCar() {
+            ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
+        }
+
+        function drawRoad() {
+            roadY += 3; // Speed of road scrolling
+            if (roadY >= canvas.height) roadY = 0;
+
+            ctx.drawImage(roadImage, 0, roadY - canvas.height, canvas.width, canvas.height);
+            ctx.drawImage(roadImage, 0, roadY, canvas.width, canvas.height);
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                if (obstacleImage.complete && obstacleImage.naturalWidth > 0) {
+                    ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                } else {
+                    ctx.fillStyle = 'blue'; // Placeholder color
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                }
+                obstacle.y += obstacleSpeed; // Move the obstacle down
+            });
+        }
+
+        function addObstacle() {
+            const minSpacing = canvas.height / 3; // Minimum spacing between obstacles
+            const maxSpacing = canvas.height / 2; // Maximum spacing between obstacles
+
+            if (obstacles.length > 0) {
+                const lastObstacle = obstacles[obstacles.length - 1];
+                const spacing = Math.random() * (maxSpacing - minSpacing) + minSpacing;
+
+                if (lastObstacle.y > spacing) {
+                    createObstacle();
+                }
+            } else {
+                createObstacle(); // Add the first obstacle
+            }
+        }
+
+        function createObstacle() {
+            const width = Math.random() * (canvas.width / 4) + 50; // Random width between 50 and canvas.width / 4
+            const height = 50; // Fixed height for obstacles
+            const x = Math.random() * (canvas.width - width); // Random x position
+            const y = -height; // Start just above the canvas
+            obstacles.push({ x, y, width, height });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText(`Score: ${score}`, canvas.width - 150, 30); // Top-right corner
+        }
+
+        function drawHighScore() {
+            const highScore = localStorage.getItem('highScore') || 0;
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(`High Score: ${highScore}`, canvas.width - 150, 60);
+        }
+
+        function restartGame() {
+            obstacles.length = 0; // Clear all obstacles
+            score = 0; // Reset score
+            frames = 0; // Reset frame counter
+            car.x = canvas.width / 2 - car.width / 2; // Reset car position
+            car.y = canvas.height - 100;
+            roadY = 0; // Reset road position
+            isPaused = false; // Unpause the game
+            gameRunning = true; // Ensure the game loop starts fresh
+            drawInitialScreen(); // Display the initial screen
+            updateGame(); // Restart the game loop
+        }
+
+        function drawInitialScreen() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw road background
+            drawRoad();
+
+            // Draw car
+            drawCar();
+
+            // Draw initial message
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('Press Restart to Begin', canvas.width / 2 - 120, canvas.height / 2);
+        }
+
+        // Function to toggle button visibility
+        function toggleButtons(state) {
+            const startButton = document.getElementById('startButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const restartButton = document.getElementById('restartButton');
+            const resumeButton = document.getElementById('resumeButton');
+
+            if (state === 'start') {
+                startButton.style.display = 'inline-block';
+                pauseButton.style.display = 'none';
+                restartButton.style.display = 'none';
+                resumeButton.style.display = 'none';
+            } else if (state === 'playing') {
+                startButton.style.display = 'none';
+                pauseButton.style.display = 'inline-block';
+                restartButton.style.display = 'inline-block';
+                resumeButton.style.display = 'none';
+            } else if (state === 'paused') {
+                startButton.style.display = 'none';
+                pauseButton.style.display = 'none';
+                restartButton.style.display = 'inline-block';
+                resumeButton.style.display = 'inline-block';
+            } else if (state === 'gameover') {
+                startButton.style.display = 'none'; // Hide Start button
+                pauseButton.style.display = 'none';
+                restartButton.style.display = 'inline-block';
+                resumeButton.style.display = 'none';
+            }
+        }
+
+        // Start button logic
+        document.getElementById('startButton').addEventListener('click', () => {
+            if (!gameRunning) {
+                isPaused = false;
+                gameRunning = true;
+                toggleButtons('playing'); // Show Pause and Restart buttons
+                updateGame(); // Start the game loop
+            }
+        });
+
+        // Pause button logic
+        document.getElementById('pauseButton').addEventListener('click', () => {
+            isPaused = true;
+            toggleButtons('paused'); // Show Resume and Restart buttons
+        });
+
+        // Resume button logic
+        document.getElementById('resumeButton').addEventListener('click', () => {
+            isPaused = false;
+            toggleButtons('playing'); // Show Pause and Restart buttons
+            updateGame(); // Resume the game loop
+        });
+
+        // Restart button logic
+        document.getElementById('restartButton').addEventListener('click', () => {
+            restartGame();
+            toggleButtons('playing'); // Show Pause and Restart buttons
+        });
+
+        let lastMilestone = 0;
+
+        function updateGame() {
+            if (isPaused) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Handle car movement
+            handleCarMovement();
+
+            // Draw road background
+            drawRoad();
+
+            // Draw car and obstacles
+            drawCar();
+            drawObstacles();
+            drawScore();
+            drawHighScore();
+
+            // Add new obstacles
+            if (frames % obstacleFrequency === 0) {
+                addObstacle();
+            }
+
+            // Remove off-screen obstacles
+            obstacles.forEach((obstacle, index) => {
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(index, 1);
+                    score++;
+                    if (soundEnabled) scoreSound.play();
+                }
+            });
+
+            // Gradually increase difficulty
+            if (score >= lastMilestone + 10) {
+                obstacleSpeed += 0.5;
+                if (obstacleFrequency > 30) obstacleFrequency -= 5;
+                lastMilestone = score;
+            }
+
+            // Check collision
+            if (detectCollision()) {
+                if (soundEnabled) collisionSound.play();
+                const highScore = localStorage.getItem('highScore') || 0;
+                if (score > highScore) {
+                    localStorage.setItem('highScore', score);
+                }
+                isPaused = true;
+                ctx.fillStyle = 'red';
+                ctx.font = '36px Arial';
+                ctx.fillText(`Game Over! Your Score: ${score}`, canvas.width / 2 - 150, canvas.height / 2);
+                gameRunning = false;
+                toggleButtons('gameover');
+                return;
+            }
+
+            frames++;
+            requestAnimationFrame(updateGame);
+        }
+
+        function detectCollision() {
+            for (let obstacle of obstacles) {
+                const carPadding = 10; // Reduce the car's bounding box
+                const obstaclePadding = 10; // Reduce the obstacle's bounding box
+
+                if (
+                    car.x + carPadding < obstacle.x + obstacle.width - obstaclePadding &&
+                    car.x + car.width - carPadding > obstacle.x + obstaclePadding &&
+                    car.y + carPadding < obstacle.y + obstacle.height - obstaclePadding &&
+                    car.y + car.height - carPadding > obstacle.y + obstaclePadding
+                ) {
+                    return true; // Collision detected
+                }
+            }
+            return false; // No collision
+        }
+
+        // Handle controls
+        canvas.addEventListener('touchstart', (e) => {
+            const touchX = e.touches[0].clientX;
+
+            if (touchX < canvas.width / 2) {
+                car.x -= car.speed;
+            } else {
+                car.x += car.speed;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const touchX = e.touches[0].clientX;
+
+            if (touchX < canvas.width / 2) {
+                car.x -= car.speed;
+            } else {
+                car.x += car.speed;
+            }
+        });
+
+        document.getElementById('fullscreenButton').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                if (canvas.requestFullscreen) {
+                    canvas.requestFullscreen();
+                } else if (canvas.webkitRequestFullscreen) { // Safari
+                    canvas.webkitRequestFullscreen();
+                } else if (canvas.msRequestFullscreen) { // IE/Edge
+                    canvas.msRequestFullscreen();
+                } else {
+                    console.error('Fullscreen API is not supported by this browser.');
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { // Safari
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE/Edge
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        // Display the initial screen when the page loads
+        drawInitialScreen();
+        toggleButtons('start'); // Ensure only the Start button is visible initially
+    </script>
+</body>
+</html>
