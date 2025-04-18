@@ -76,6 +76,39 @@
                 display: block; /* Show the landscape message in portrait mode */
             }
         }
+
+        #rotateButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ff7e5f, #feb47b); /* Gradient background */
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #rotateButton:hover {
+            background: linear-gradient(135deg, #feb47b, #ff7e5f); /* Reverse gradient on hover */
+            transform: translate(-50%, -50%) scale(1.05); /* Slight zoom effect */
+        }
+
+        #rotateButton:active {
+            transform: translate(-50%, -50%) scale(0.95); /* Pressed effect */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        @media screen and (max-width: 768px) {
+            #rotateButton {
+                display: block; /* Show only on mobile devices */
+            }
+        }
     </style>
 </head>
 <body>
@@ -90,6 +123,7 @@
         <button id="difficultyButton">Difficulty: Easy</button>
         <button id="fullscreenButton">Fullscreen</button>
         <button id="soundButton">Sound: On</button>
+        <button id="rotateButton" style="display: none;">Rotate Screen</button>
     </div>
     <canvas id="gameCanvas"></canvas>
     <script>
@@ -138,16 +172,26 @@
         });
 
         function checkOrientation() {
+            const rotateButton = document.getElementById('rotateButton');
+            const landscapeMessage = document.getElementById('landscapeMessage');
+
             if (window.innerWidth > window.innerHeight) {
                 // Landscape mode
-                document.getElementById('landscapeMessage').style.display = 'none';
-                canvas.style.display = 'block';
+                rotateButton.style.display = 'none'; // Hide the rotate button
+                landscapeMessage.style.display = 'none'; // Hide the landscape message
+                canvas.style.display = 'block'; // Show the game canvas
             } else {
                 // Portrait mode
-                document.getElementById('landscapeMessage').style.display = 'block';
-                canvas.style.display = 'none';
+                rotateButton.style.display = 'block'; // Show the rotate button
+                landscapeMessage.style.display = 'block'; // Show the landscape message
+                canvas.style.display = 'none'; // Hide the game canvas
             }
         }
+
+        // Add event listener for the Rotate Screen button
+        document.getElementById('rotateButton').addEventListener('click', () => {
+            alert('Please rotate your device to landscape mode for the best experience.');
+        });
 
         // Check orientation on page load
         checkOrientation();
@@ -196,6 +240,11 @@
             soundEnabled = !soundEnabled;
             document.getElementById('soundButton').innerText = soundEnabled ? 'Sound: On' : 'Sound: Off';
         });
+
+        if (soundEnabled) {
+            collisionSound.play();
+            scoreSound.play();
+        }
 
         let isPaused = false;
         let gameRunning = false; // Flag to track if the game is already running
