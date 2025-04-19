@@ -9,122 +9,78 @@
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            background-color: #282c34; /* Dark background for better contrast */
+            background-color: #282c34;
             color: white;
         }
 
         canvas {
             display: block;
-            border: 2px solid white; /* Add a border around the canvas */
+            border: 2px solid white;
+            position: relative;
+            z-index: 1;
         }
 
         div {
             position: absolute;
-            top: 10px; /* Move buttons to the top */
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10;
+            z-index: 1000;
             display: flex;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            flex-wrap: wrap;
             gap: 10px;
         }
 
         button {
             padding: 12px 20px;
-            font-size: 16px; /* Slightly larger font size */
-            border: none;
-            border-radius: 8px; /* Rounded corners */
-            cursor: pointer;
-            background: linear-gradient(135deg, #61dafb, #21a1f1); /* Gradient background */
-            color: white; /* White text for better contrast */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
-            transition: all 0.3s ease; /* Smooth transition for hover effects */
-        }
-
-        button:hover {
-            background: linear-gradient(135deg, #21a1f1, #1b8cd8); /* Darker gradient on hover */
-            transform: translateY(-2px); /* Slight lift effect */
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3); /* Enhanced shadow on hover */
-        }
-
-        button:active {
-            transform: translateY(2px); /* Pressed effect */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Reduced shadow on click */
-        }
-
-        #landscapeMessage {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: white;
-            text-align: center;
-            z-index: 20;
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        @media screen and (orientation: portrait) {
-            canvas {
-                display: none; /* Hide the game canvas in portrait mode */
-            }
-
-            #landscapeMessage {
-                display: block; /* Show the landscape message in portrait mode */
-            }
-        }
-
-        #rotateButton {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            padding: 15px 30px;
-            font-size: 18px;
+            font-size: 16px;
             border: none;
             border-radius: 8px;
-            background: linear-gradient(135deg, #ff7e5f, #feb47b); /* Gradient background */
-            color: white;
             cursor: pointer;
+            background: linear-gradient(135deg, #61dafb, #21a1f1);
+            color: white;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
         }
 
-        #rotateButton:hover {
-            background: linear-gradient(135deg, #feb47b, #ff7e5f); /* Reverse gradient on hover */
-            transform: translate(-50%, -50%) scale(1.05); /* Slight zoom effect */
+        button:hover {
+            background: linear-gradient(135deg, #21a1f1, #1b8cd8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
         }
 
-        #rotateButton:active {
-            transform: translate(-50%, -50%) scale(0.95); /* Pressed effect */
+        button:active {
+            transform: translateY(2px);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        @media screen and (max-width: 768px) {
-            #rotateButton {
-                display: block; /* Show only on mobile devices */
-            }
+        #orientationOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 2000;
+            padding-top: 40%;
         }
     </style>
 </head>
 <body>
-    <div id="landscapeMessage">
-        Please rotate your device to landscape mode to play the game.
-    </div>
     <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-wrap: wrap; gap: 10px;">
         <button id="startButton">Start</button>
         <button id="pauseButton" style="display: none;">Pause</button>
         <button id="resumeButton" style="display: none;">Resume</button>
         <button id="restartButton" style="display: none;">Restart</button>
         <button id="difficultyButton">Difficulty: Easy</button>
-        <button id="fullscreenButton">Fullscreen</button>
         <button id="soundButton">Sound: On</button>
-        <button id="rotateButton" style="display: none;">Rotate Screen</button>
     </div>
+    <div id="orientationOverlay"></div>
     <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -142,59 +98,35 @@
             car.y = canvas.height - 100;
         });
 
-        // Adjust button visibility and canvas size when entering or exiting fullscreen mode
-        document.addEventListener('fullscreenchange', () => {
-            const buttonContainer = document.querySelector('div');
-            if (document.fullscreenElement) {
-                canvas.width = screen.width;
-                canvas.height = screen.height;
-                car.x = canvas.width / 2 - car.width / 2;
-                car.y = canvas.height - 100;
-
-                // Adjust button container for fullscreen
-                buttonContainer.style.position = 'fixed';
-                buttonContainer.style.top = '10px';
-                buttonContainer.style.left = '50%';
-                buttonContainer.style.transform = 'translateX(-50%)';
-                buttonContainer.style.zIndex = '1000'; // Ensure buttons are above the canvas
+        // Check if the game is being opened on a mobile device
+        function checkIfMobile() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                checkOrientation(); // Enforce portrait mode on mobile devices
             } else {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                car.x = canvas.width / 2 - car.width / 2;
-                car.y = canvas.height - 100;
-
-                // Reset button container position
-                buttonContainer.style.position = 'absolute';
-                buttonContainer.style.top = '10px';
-                buttonContainer.style.left = '50%';
-                buttonContainer.style.transform = 'translateX(-50%)';
-                buttonContainer.style.zIndex = '10'; // Reset z-index
-            }
-        });
-
-        function checkOrientation() {
-            const rotateButton = document.getElementById('rotateButton');
-            const landscapeMessage = document.getElementById('landscapeMessage');
-
-            if (window.innerWidth > window.innerHeight) {
-                // Landscape mode
-                rotateButton.style.display = 'none'; // Hide the rotate button
-                landscapeMessage.style.display = 'none'; // Hide the landscape message
-                canvas.style.display = 'block'; // Show the game canvas
-            } else {
-                // Portrait mode
-                rotateButton.style.display = 'block'; // Show the rotate button
-                landscapeMessage.style.display = 'block'; // Show the landscape message
-                canvas.style.display = 'none'; // Hide the game canvas
+                // Allow the game to run on desktop devices
+                console.log("Running on a desktop device.");
+                const overlay = document.getElementById('orientationOverlay');
+                overlay.style.display = 'none'; // Ensure the overlay is hidden on desktop
             }
         }
 
-        // Add event listener for the Rotate Screen button
-        document.getElementById('rotateButton').addEventListener('click', () => {
-            alert('Please rotate your device to landscape mode for the best experience.');
-        });
+        // Restrict to portrait mode for mobile devices only
+        function checkOrientation() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const overlay = document.getElementById('orientationOverlay');
+            if (isMobile && window.innerWidth > window.innerHeight) {
+                // Landscape mode on mobile
+                overlay.style.display = 'block';
+                overlay.innerText = 'Please rotate your device to portrait mode.';
+            } else {
+                // Portrait mode or desktop
+                overlay.style.display = 'none';
+            }
+        }
 
-        // Check orientation on page load
+        // Call the functions to check for mobile devices and orientation
+        checkIfMobile();
         checkOrientation();
 
         // Listen for orientation changes
@@ -529,61 +461,7 @@
             }
             return false; // No collision
         }
-
-        let isTouching = false; // Track if the user is currently touching the screen
-
-        canvas.addEventListener('touchstart', (e) => {
-            isTouching = true; // Start tracking touch
-            const touchX = e.touches[0].clientX;
-
-            // Move the car to the touch position immediately
-            if (touchX < canvas.width / 2 && car.x > 0) {
-                car.x -= car.speed; // Move left, but stop at the left boundary
-            } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
-                car.x += car.speed; // Move right, but stop at the right boundary
-            }
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (!isTouching) return; // Ignore if not touching
-
-            const touchX = e.touches[0].clientX;
-
-            // Smoothly move the car based on the touch position
-            if (touchX < car.x && car.x > 0) {
-                car.x -= car.speed; // Move left, but stop at the left boundary
-            } else if (touchX > car.x + car.width && car.x + car.width < canvas.width) {
-                car.x += car.speed; // Move right, but stop at the right boundary
-            }
-        });
-
-        canvas.addEventListener('touchend', () => {
-            isTouching = false; // Stop tracking touch
-        });
-
-        document.getElementById('fullscreenButton').addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                if (canvas.requestFullscreen) {
-                    canvas.requestFullscreen();
-                } else if (canvas.webkitRequestFullscreen) { // Safari
-                    canvas.webkitRequestFullscreen();
-                } else if (canvas.msRequestFullscreen) { // IE/Edge
-                    canvas.msRequestFullscreen();
-                } else {
-                    console.error('Fullscreen API is not supported by this browser.');
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { // Safari
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { // IE/Edge
-                    document.msExitFullscreen();
-                }
-            }
-        });
-
-        
     </script>
 </body>
 </html>
+``` 
