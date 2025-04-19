@@ -530,9 +530,13 @@
             return false; // No collision
         }
 
+        let isTouching = false; // Track if the user is currently touching the screen
+
         canvas.addEventListener('touchstart', (e) => {
+            isTouching = true; // Start tracking touch
             const touchX = e.touches[0].clientX;
 
+            // Move the car to the touch position immediately
             if (touchX < canvas.width / 2 && car.x > 0) {
                 car.x -= car.speed; // Move left, but stop at the left boundary
             } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
@@ -541,13 +545,20 @@
         });
 
         canvas.addEventListener('touchmove', (e) => {
+            if (!isTouching) return; // Ignore if not touching
+
             const touchX = e.touches[0].clientX;
 
-            if (touchX < canvas.width / 2 && car.x > 0) {
+            // Smoothly move the car based on the touch position
+            if (touchX < car.x && car.x > 0) {
                 car.x -= car.speed; // Move left, but stop at the left boundary
-            } else if (touchX >= canvas.width / 2 && car.x + car.width < canvas.width) {
+            } else if (touchX > car.x + car.width && car.x + car.width < canvas.width) {
                 car.x += car.speed; // Move right, but stop at the right boundary
             }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isTouching = false; // Stop tracking touch
         });
 
         document.getElementById('fullscreenButton').addEventListener('click', () => {
