@@ -82,6 +82,17 @@
     </div>
     <div id="orientationOverlay"></div>
     <canvas id="gameCanvas"></canvas>
+    <!-- Mobile Controls -->
+    <div id="mobileControls" style="display:none; position:fixed; bottom:30px; left:0; width:100%; z-index:1001; pointer-events:none;">
+        <div style="position:absolute; left:10px; bottom:0; display:flex; flex-direction:column; gap:20px; pointer-events:auto;">
+            <button id="leftBtn" style="font-size:28px; width:60px; height:60px;">&#8592;</button>
+            <button id="rightBtn" style="font-size:28px; width:60px; height:60px;">&#8594;</button>
+        </div>
+        <div style="position:absolute; right:10px; bottom:0; display:flex; flex-direction:column; gap:20px; pointer-events:auto;">
+            <button id="upBtn" style="font-size:28px; width:60px; height:60px;">&#8593;</button>
+            <button id="downBtn" style="font-size:28px; width:60px; height:60px;">&#8595;</button>
+        </div>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -215,19 +226,96 @@
             keys[e.key] = false; // Mark the key as released
         });
 
-        // Update car position based on pressed keys
+        // Detect mobile device
+        function isMobileDevice() {
+            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        }
+
+        // Show/hide mobile controls based on device
+        function showMobileControls() {
+            document.getElementById('mobileControls').style.display = isMobileDevice() ? 'block' : 'none';
+        }
+        showMobileControls();
+
+        // Disable default touchmove on canvas for mobile to prevent swipe/scroll
+        if (isMobileDevice()) {
+            canvas.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchend', function(e) { e.preventDefault(); }, { passive: false });
+        }
+
+        // Mobile controls event listeners
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const upBtn = document.getElementById('upBtn');
+        const downBtn = document.getElementById('downBtn');
+
+        let leftPressed = false, rightPressed = false, upPressed = false, downPressed = false;
+
+        if (isMobileDevice() && leftBtn && rightBtn && upBtn && downBtn) {
+            leftBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                leftPressed = true;
+            });
+            leftBtn.addEventListener('touchend', function(e) {
+                leftPressed = false;
+            });
+
+            rightBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                rightPressed = true;
+            });
+            rightBtn.addEventListener('touchend', function(e) {
+                rightPressed = false;
+            });
+
+            upBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                upPressed = true;
+            });
+            upBtn.addEventListener('touchend', function(e) {
+                upPressed = false;
+            });
+
+            downBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                downPressed = true;
+            });
+            downBtn.addEventListener('touchend', function(e) {
+                downPressed = false;
+            });
+        }
+
+        // Update car position based on pressed keys or mobile buttons
         function handleCarMovement() {
-            if (keys['ArrowLeft'] && car.x > 0) {
-                car.x -= car.speed;
-            }
-            if (keys['ArrowRight'] && car.x + car.width < canvas.width) {
-                car.x += car.speed;
-            }
-            if (keys['ArrowUp'] && car.y > 0) {
-                car.y -= car.speed;
-            }
-            if (keys['ArrowDown'] && car.y + car.height < canvas.height) {
-                car.y += car.speed;
+            if (isMobileDevice()) {
+                // Only use mobile buttons for movement on mobile
+                if (leftPressed && car.x > 0) {
+                    car.x -= car.speed;
+                }
+                if (rightPressed && car.x + car.width < canvas.width) {
+                    car.x += car.speed;
+                }
+                if (upPressed && car.y > 0) {
+                    car.y -= car.speed;
+                }
+                if (downPressed && car.y + car.height < canvas.height) {
+                    car.y += car.speed;
+                }
+            } else {
+                // Keyboard controls for PC
+                if (keys['ArrowLeft'] && car.x > 0) {
+                    car.x -= car.speed;
+                }
+                if (keys['ArrowRight'] && car.x + car.width < canvas.width) {
+                    car.x += car.speed;
+                }
+                if (keys['ArrowUp'] && car.y > 0) {
+                    car.y -= car.speed;
+                }
+                if (keys['ArrowDown'] && car.y + car.height < canvas.height) {
+                    car.y += car.speed;
+                }
             }
         }
 
@@ -464,4 +552,4 @@
     </script>
 </body>
 </html>
-``` 
+
