@@ -83,7 +83,7 @@
     <div id="orientationOverlay"></div>
     <canvas id="gameCanvas"></canvas>
     <!-- Mobile Controls -->
-    <div id="mobileControls" style="display:none; position:fixed; bottom:30px; left:0; width:100%; z-index:1001; pointer-events:none;">
+    <div id="mobileControls" style="display:none !important; position:fixed; bottom:30px; left:0; width:100%; z-index:1001; pointer-events:none;">
         <div style="position:absolute; left:10px; bottom:0; display:flex; flex-direction:column; gap:20px; pointer-events:auto;">
             <button id="leftBtn" style="font-size:28px; width:60px; height:60px;">&#8592;</button>
             <button id="rightBtn" style="font-size:28px; width:60px; height:60px;">&#8594;</button>
@@ -226,16 +226,25 @@
             keys[e.key] = false; // Mark the key as released
         });
 
-        // Detect mobile device
+        // Detect mobile device or Chrome responsive mode
         function isMobileDevice() {
-            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+                (typeof window.orientation !== "undefined") ||
+                (navigator.userAgent.includes("Mobile")) ||
+                (window.innerWidth <= 800 && window.innerHeight <= 900);
         }
 
-        // Show/hide mobile controls based on device
+        // Show/hide mobile controls based on device or responsive mode
         function showMobileControls() {
-            document.getElementById('mobileControls').style.display = isMobileDevice() ? 'block' : 'none';
+            const mobileControls = document.getElementById('mobileControls');
+            if (isMobileDevice()) {
+                mobileControls.style.display = 'block';
+            } else {
+                mobileControls.style.display = 'none';
+            }
         }
         showMobileControls();
+        window.addEventListener('resize', showMobileControls);
 
         // Disable default touchmove on canvas for mobile to prevent swipe/scroll
         if (isMobileDevice()) {
